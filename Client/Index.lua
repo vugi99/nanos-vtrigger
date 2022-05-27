@@ -220,31 +220,14 @@ function VTrigger.prototype:ForceOverlapChecking()
             end
         elseif self.InitValues.trigger_type == TriggerType.Box then
             local trigger_rot = self:GetRotation()
-            local coord_vectors = {
-                X = trigger_rot:GetForwardVector(),
-                Y = trigger_rot:GetRightVector(),
-                Z = trigger_rot:GetUpVector(),
-            }
 
             local extent = self.InitValues.extent
-            local MinLoc, MaxLoc = Vector(trigger_loc.X, trigger_loc.Y, trigger_loc.Z), Vector(trigger_loc.X, trigger_loc.Y, trigger_loc.Z)
-            local length_Vector = Vector()
-            local local_Vector = Vector()
-            for i, v in ipairs(Coordaxis) do
-                MinLoc = MinLoc - coord_vectors[v] * extent[v]
-                MaxLoc = MaxLoc + coord_vectors[v] * extent[v]
-                length_Vector[v] = extent[v]^2
-                local_Vector[v] = extent[v]/length_Vector[v]
-            end
-
-            --Client.DrawDebugPoint(Vector(MinLoc.X, MinLoc.Y, MinLoc.Z), Color.RED, 0.01, 10)
-            --Client.DrawDebugPoint(Vector(MaxLoc.X, MaxLoc.Y, MaxLoc.Z), Color.RED, 0.01, 10)
 
             for i, v in ipairs(Moving_Entities) do
                 if self:IsValid() then
                     for k2, v2 in pairs(_ENV[v].GetPairs()) do
                         local entity_location = v2:GetLocation()
-                        if IsPointInCube(entity_location, MinLoc, MaxLoc) then
+                        if IsPointInRectangle(entity_location, trigger_loc, trigger_rot, extent) then
                             self:InternalInTrigger(v2)
                             if not self:IsValid() then
                                 break
@@ -359,18 +342,15 @@ Client.Subscribe("Tick", function(ds)
     end
 end)
 
-function IsPointInCube(loc, MinLoc, MaxLoc)
-    --[[for i, v in ipairs(Coordaxis) do
-        local ToPoint = loc - cube_loc
-        local vector = ToPoint * local_Vector[v]
-        if math.sqrt(vector.X ^2 + vector.Y^2 + vector.Z^2) > length_Vector[v] then
-            return false
-        end
-    end]]--
-    for i, v in ipairs(Coordaxis) do
-        if loc[v] < MinLoc[v] or loc[v] > MaxLoc[v] then
-            return false
-        end
-    end
-    return true
+function IsPointInRectangle(entity_location, trigger_loc, trigger_rot, extent)
+
+    -- Check if the entity location is in the box, the center of the box is the trigger location, the rectangle size is the extent and the rectangle rotation is the trigger rotation
+    local box_center = trigger_loc
+    local box_size = extent
+    local box_rot = trigger_rot
+
+    local entity_location_to_box_center = Vector(box_center.X - entity_location.X, box_center.Y - entity_location.Y, box_center.Z - entity_location.Z)
+    local entity_location_to_box_center_rotated = box_rot:RotateVector(entity_location_to_box_center)
+
+    return math.abs(entity_location_to_box_center_rotated.X) <= box_size.X and math.abs(entity_location_to_box_center_rotated.Y) <= box_size.Y and math.abs(entity_location_to_box_center_rotated.Z) <= box_size.Z
 end

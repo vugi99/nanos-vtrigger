@@ -15,7 +15,7 @@ Package.RequirePackage("vtrigger")
 ### Refer to the [Trigger docs](https://docs.nanos.world/docs/scripting-reference/classes/trigger)
 
 ### Functions List
-* VTrigger(location, rotation, extent, trigger_type, is_visible, color) - The Box Trigger doesn't support custom rotations properly.
+* VTrigger(location, rotation, extent, trigger_type, is_visible, color)
 * trigger:IsValid()
 * trigger:GetID() - This returns an unique trigger ID and is not unique if you compare it with nanos entities IDs.
 * trigger:SetValue(key, value)
