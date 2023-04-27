@@ -1,12 +1,15 @@
 
 
 -- All the entities that can trigger overlap events
-local Moving_Entities = {
-    "Character",
-    "Vehicle",
-    "Prop",
-    "Weapon",
-}
+local Moving_Entities = {}
+for k, v in pairs(debug.getregistry().classes) do
+    local meta = getmetatable(v)
+    if (meta and meta.__call) then
+        if (v.__function.GetLocation) then
+            table.insert(Moving_Entities, v.__name)
+        end
+    end
+end
 
 All_VTriggers = {}
 local Trigger_ID = 0
@@ -18,12 +21,14 @@ local Coordaxis = {
 }
 
 
-VTrigger = {}
+Package.Export("VTrigger", {})
 
 
-function VTrigger_Constructor(location, rotation, extent, trigger_type, is_visible, color)
+function VTrigger_Constructor(location, rotation, extent, trigger_type, is_visible, color, overlap_only_classes)
     if (location and rotation and extent and trigger_type and color) then
         local trigger = setmetatable({}, VTrigger.prototype)
+
+        overlap_only_classes = overlap_only_classes or Moving_Entities
 
         trigger.InitValues = {
             location = location,
@@ -32,6 +37,7 @@ function VTrigger_Constructor(location, rotation, extent, trigger_type, is_visib
             trigger_type = trigger_type,
             is_visible = is_visible,
             color = color,
+            overlap_only_classes = overlap_only_classes,
         }
         trigger.Stored = {}
         trigger.Stored.Values = {}
@@ -205,7 +211,7 @@ function VTrigger.prototype:ForceOverlapChecking()
         local trigger_loc = self:GetLocation()
         if self.InitValues.trigger_type == TriggerType.Sphere then
             local distance_from_sphere = self.InitValues.extent.X^2
-            for i, v in ipairs(Moving_Entities) do
+            for i, v in ipairs(self.InitValues.overlap_only_classes) do
                 if self:IsValid() then
                     for k2, v2 in pairs(_ENV[v].GetPairs()) do
                         local entity_location = v2:GetLocation()
@@ -237,10 +243,10 @@ function VTrigger.prototype:ForceOverlapChecking()
                 local_Vector[v] = extent[v]/length_Vector[v]
             end
 
-            --Client.DrawDebugPoint(Vector(MinLoc.X, MinLoc.Y, MinLoc.Z), Color.RED, 0.01, 10)
-            --Client.DrawDebugPoint(Vector(MaxLoc.X, MaxLoc.Y, MaxLoc.Z), Color.RED, 0.01, 10)
+            --Debug.DrawPoint(Vector(MinLoc.X, MinLoc.Y, MinLoc.Z), Color.RED, 0.01, 10)
+            --Debug.DrawPoint(Vector(MaxLoc.X, MaxLoc.Y, MaxLoc.Z), Color.RED, 0.01, 10)
 
-            for i, v in ipairs(Moving_Entities) do
+            for i, v in ipairs(self.InitValues.overlap_only_classes) do
                 if self:IsValid() then
                     for k2, v2 in pairs(_ENV[v].GetPairs()) do
                         local entity_location = v2:GetLocation()
@@ -349,9 +355,9 @@ Client.Subscribe("Tick", function(ds)
             if v:IsValid() then
                 if v.InitValues.is_visible then
                     if v.InitValues.trigger_type == TriggerType.Sphere then
-                        Client.DrawDebugSphere(v:GetLocation(), v.InitValues.extent.X, 25, v.InitValues.color, 0.01, 0)
+                        Debug.DrawSphere(v:GetLocation(), v.InitValues.extent.X, 25, v.InitValues.color, 0.01, 0)
                     elseif v.InitValues.trigger_type == TriggerType.Box then
-                        Client.DrawDebugBox(v:GetLocation(), v.InitValues.extent, v:GetRotation(), v.InitValues.color, 0.01, 0)
+                        Debug.DrawBox(v:GetLocation(), v.InitValues.extent, v:GetRotation(), v.InitValues.color, 0.01, 0)
                     end
                 end
             end
